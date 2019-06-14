@@ -1,0 +1,7 @@
+
+[Directories]
+training = "data/train"
+datasets = "data/sets"
+
+[preperation]
+sets = ["chatterbot"]
