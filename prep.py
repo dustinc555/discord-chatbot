@@ -1,9 +1,9 @@
+#!/usr/bin/python
 # prep.py
-# reads all sets told to in settings.toml
+# reads all sets listed in settings.toml
 # and converts them to a main data file
 # the main data file has the format: (in sentence)\n(out sentence)\n
 # this file is not a library file it must be run
-
 import toml
 import util
 import glob
@@ -21,19 +21,17 @@ def massage_chatterbot():
 	# 2d array of size 2 arrays [Q, A]
 	data_arr = []
 
-	# combine parsed files
+	# combine all conversations
 	for fp in file_paths:
 		df = pd.io.json.json_normalize(yaml.load( open(fp) ))
 		data_arr += df['conversations'][0]
 
 	
-	# clean up strings
-	# i am not going to train for newlines.
-	data_arr = [[sentence.replace('\n', ' ').strip() for sentence in conv]  for conv in data_arr]
-
+	# clean up strings and combine
+	data_preppared = ''.join(sentence.replace('\n', ' ').strip() + '\n' for conv in data_arr for sentence in conv)
 
 	# return 
-	return
+	return data_preppared
 
 # event dispatch table for loading datasets
 data_preperation_procedures = {
