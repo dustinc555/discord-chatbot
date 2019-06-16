@@ -1,0 +1,10 @@
+keras
+tensorflow
+numpy
+html5lib
+pandas
+pylint
+matplotlib
+pillow
+opencv-python
+toml
