@@ -8,3 +8,4 @@ matplotlib
 pillow
 opencv-python
 toml
+pickle

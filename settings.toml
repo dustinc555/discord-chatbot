@@ -1,7 +1,16 @@
 
-[Directories]
+[directories]
 training = "data/train"
 datasets = "data/sets"
 
+[files]
+training = 'data/train/data.txt'
+
 [preperation]
 sets = ["chatterbot"]
+
+[tokenizer]
+production = 'tokenizer/p_tokenizer_pi.obj'
+
+[model]
+production = 'models/production.h5'
