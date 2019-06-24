@@ -2,7 +2,7 @@
 # makemodel.py
 # run this file to create the model and corresponding tokenizer
 
-
+from keras.models import load_model
 from keras.models import Sequential
 from keras import backend as K
 from keras.layers import *
@@ -34,16 +34,19 @@ def signal_handler(sig, frame):
 signal.signal(signal.SIGINT, signal_handler)
 
 # make tokenizer
-t = Tokenizer(oov_token=1)
+t = Tokenizer(oov_token=settings['tokenizer']['oov_token'], num_words=2000)
+max_word_count = settings['tokenizer']['max_word_count']
 
 # loadTrainingData fits the data to the tokenizer and
 # returns the question and answers as numpy array of tokens
-(input_data, ans_data) = util.loadTrainingData(settings['files']['training'], t)
+(vocab, input_data, ans_data) = util.loadTrainingData(settings['files']['training'], t)
 
 # make model
 model = Sequential()
-model.add(Dense(20, activation='relu'))
-model.add(Dense(max_sentence_length, activation='relu'))
+model.add(LSTM(1, input_shape=(max_word_count, 1)))
+model.add(Dense(int(max_word_count / 2), activation='softmax'))
+model.add(Dense(max_word_count, activation='softmax'))
+
 
 ## Compile Model
 model.compile(loss='mse', optimizer='rmsprop')
@@ -59,4 +62,4 @@ model.fit(input_data, ans_data,
 model.save(settings['model']['production'])
 
 # save tokenizer
-util.saveTokenizer(settings['tokenizer']['path'], t)
+util.saveTokenizer(settings['tokenizer']['production'], t)
