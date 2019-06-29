@@ -12,6 +12,7 @@ import cv2
 import glob
 import toml
 import pickle
+import math
 
 # returns settings dictionary
 # must be in same dir as settings.toml to work
@@ -90,4 +91,5 @@ def predict_production(text):
     word_sequence    = text_to_word_sequence(text)
     tokens           = tokenizer.texts_to_sequences([word_sequence])[0]
     tokens           = np.array([tokens + [tokenizer.oov_token] * (max_word_count - len(tokens))])#.astype('float32') / vocab
-    predicted_tokens = model.predict(tokens)
+    predicted_tokens = list(filter(lambda x: x != 1, (model.predict(tokens).astype('int')).tolist()[0]))
+    return predicted_tokens

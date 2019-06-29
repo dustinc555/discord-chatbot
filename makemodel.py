@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # makemodel.py
 # run this file to create the model and corresponding tokenizer
 
@@ -12,6 +12,7 @@ from keras.callbacks import TensorBoard
 from keras.models import load_model
 from keras.preprocessing.text import Tokenizer
 
+import tensorflow as tf
 import os
 import sys
 import signal
@@ -34,28 +35,41 @@ def signal_handler(sig, frame):
 signal.signal(signal.SIGINT, signal_handler)
 
 # make tokenizer
-t = Tokenizer(oov_token=settings['tokenizer']['oov_token'], num_words=2000)
+t = Tokenizer(oov_token=settings['tokenizer']['oov_token'], 
+              num_words=settings['tokenizer']['num_words'])
 max_word_count = settings['tokenizer']['max_word_count']
 
 # loadTrainingData fits the data to the tokenizer and
-# returns the question and answers as numpy array of tokens
+# returns the question and answers as numpy array of tokens we well as the
+# number of discovered words (vocab)
 (vocab, input_data, ans_data) = util.loadTrainingData(settings['files']['training'], t)
 
-# make model
-model = Sequential()
-model.add(LSTM(1, input_shape=(max_word_count, 1)))
-model.add(Dense(int(max_word_count / 2), activation='softmax'))
-model.add(Dense(max_word_count, activation='softmax'))
 
+# Define an input sequence and process it.
+encoder_inputs = Input(shape=(None,))
+x = Embedding(max_word_count, latent_dim)(encoder_inputs)
+x, state_h, state_c = LSTM(latent_dim,
+                           return_state=True)(x)
+encoder_states = [state_h, state_c]
 
-## Compile Model
-model.compile(loss='mse', optimizer='rmsprop')
+# Set up the decoder, using `encoder_states` as initial state.
+decoder_inputs = Input(shape=(None,))
+x = Embedding(num_decoder_tokens, latent_dim)(decoder_inputs)
+x = LSTM(latent_dim, return_sequences=True)(x, initial_state=encoder_states)
+decoder_outputs = Dense(num_decoder_tokens, activation='softmax')(x)
 
-## Fit Model
-model.fit(input_data, ans_data,
-        batch_size=1,
-        epochs=1,
-        shuffle=True)
+# Define the model that will turn
+# `encoder_input_data` & `decoder_input_data` into `decoder_target_data`
+model = Model([encoder_inputs, decoder_inputs], decoder_outputs)
+
+# Compile & run training
+model.compile(optimizer='rmsprop', loss='categorical_crossentropy')
+# Note that `decoder_target_data` needs to be one-hot encoded,
+# rather than sequences of integers like `decoder_input_data`!
+model.fit([encoder_input_data, decoder_input_data], decoder_target_data,
+          batch_size=batch_size,
+          epochs=epochs,
+          validation_split=0.2)
 
 
 # save model

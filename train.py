@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 from keras.models import Sequential
 from keras import backend as K
 from keras.layers import *
@@ -21,7 +21,7 @@ from keras.optimizers import Adam
 import signal
 def signal_handler(sig, frame):
         print('\nsaving')
-        model.save(settings.productionModel)
+        model.save(settings['model']['production'])
         print('quiting\n')
         sys.exit(0)
 signal.signal(signal.SIGINT, signal_handler)
@@ -33,13 +33,13 @@ t = util.loadTokenizer(settings['tokenizer']['production'])
 
 # load training data
 # this does refit the tokenizer 
-(max_word_count, vocab, input_data, ans_data) = util.loadTrainingData(settings['files']['training'], t)
+(vocab, input_data, ans_data) = util.loadTrainingData(settings['files']['training'], t)
 
 # train
 model.fit(input_data, ans_data,
           batch_size=settings['training']['batch_size'],
           epochs=settings['training']['epochs'],
-          shuffle=True)
+          verbose=1)
           #callbacks=[TensorBoard(log_dir='logs')])
 
 ## Save Model

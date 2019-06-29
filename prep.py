@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # prep.py
 # reads all sets listed in settings.toml
 # and converts them to a main data file
