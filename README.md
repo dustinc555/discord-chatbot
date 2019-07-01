@@ -25,7 +25,7 @@ The file consists of a list of sentences seperated by new lines. Every other sen
 *The end of sentence delimiter is the newline character.*
 
 ## Adding sets
-1) Drag the data set to its own sub folder in data/sets.
+1) Place the data set to its own sub folder in data/sets.
 2) Add a unique name for the set in preperation->sets.
 3) Create a function that has the same name put in preperation->sets in prep.py that parces this set.
 4) Add the function name to ```data_preperation_procedures``` in prep.py so that it may be called.
