@@ -33,6 +33,9 @@ The file consists of a list of sentences seperated by new lines. Every other sen
 The function added in step 3 returns the data as (input sentence)\n(output sentence)\n ...
 This will be summed up with the output of the other sets and consolidated in data/train/data.txt.
 
+## Recommended sets
+* chatterbot: https://www.kaggle.com/kausr25/chatterbotenglish#botprofile.yml
+
 # The Model
 ## LSTM - Long short term memory
 Useful introduction to the LSTM layer: https://adventuresinmachinelearning.com/keras-lstm-tutorial/
