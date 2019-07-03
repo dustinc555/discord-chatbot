@@ -57,31 +57,12 @@ def loadTrainingData(path_to_data, tokenizer):
     # pad to max size
     # todo: possibly set limit for this
     # convert to float and normalize
-    #tokens = [sub_tokens + [tokenizer.oov_token] * (max_word_count - len(sub_tokens)) for sub_tokens in tokens]
-#
-    ## its expected that [::2] is a user question and [1::2] is the bots answer
-    ## split array in two for input/anwers
-    #input_tokens = tokens[::2]
-    #input_set = []
-    #for sentence in input_tokens:
-    #    for token in sentence:
-    #        input_set.append(token)
-    #input_set = np.array(input_set)
-#
-    #ans_tokens = tokens[1::2]
-    #ans_set = to_categorical(ans_tokens, vocab + 2)
-
-    print("Tokenizer:")
-    print("max word count: " + str(max_word_count))
-    print("Words found: " + str(vocab))
-    #print(input_set.shape)
-    #print(ans_set.shape)
+    tokens = [sub_tokens + [tokenizer.oov_token] * (max_word_count - len(sub_tokens)) for sub_tokens in tokens]
 
 
-    ## NEW STUFF
-    all_tokens = [token for sentence in tokens for token in sentence]
+    tokens = [token for sentence in tokens for token in sentence]
 
-    return (vocab, all_tokens[::2], all_tokens[1::2])
+    return (vocab, tokens[::2], tokens[1::2])
     #return (vocab, input_set, ans_set)
 
 def loadTokenizer(path):
@@ -116,9 +97,21 @@ def predict_production(text):
     vocab            = len(tokenizer.word_counts)
     word_sequence    = text_to_word_sequence(text)
     tokens           = tokenizer.texts_to_sequences([word_sequence])[0]
-    tokens           = np.array([tokens + [tokenizer.oov_token] * (max_word_count - len(tokens))])#.astype('float32') / vocab
-    predicted_tokens = list(filter(lambda x: x != 1, (model.predict(tokens).astype('int')).tolist()[0]))
-    return predicted_tokens
+    tokens           = np.array([tokens + [tokenizer.oov_token] * (max_word_count - len(tokens))])
+
+    # make prediction
+    prediction = model.predict(tokens)[0]
+
+    # collect actual tokens
+    predicted_tokens = [np.argmax(vec) for vec in prediction]
+
+    # remove invalid token
+    predicted_tokens = list(filter(lambda x: x != 1, predicted_tokens))
+
+    predicted_text = tokenizer.sequences_to_texts([predicted_tokens])
+
+
+    return ' '.join(predicted_text)
 
 
 class KerasBatchGenerator(object):

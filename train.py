@@ -35,6 +35,8 @@ t = util.loadTokenizer(settings['tokenizer']['production'])
 # this does refit the tokenizer 
 (vocab, input_data, ans_data) = util.loadTrainingData(settings['files']['training'], t)
 
+vocab += 2
+
 num_steps = settings['tokenizer']['max_word_count']
 batch_size = settings['training']['batch_size']
 num_epochs=settings['training']['epochs']

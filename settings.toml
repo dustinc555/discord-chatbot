@@ -20,4 +20,4 @@ production = 'models/production.h5'
 
 [training]
 batch_size = 20
-epochs = 50
+epochs = 100

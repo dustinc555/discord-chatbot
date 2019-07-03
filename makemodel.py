@@ -51,16 +51,21 @@ batch_size = settings['training']['batch_size']
 num_epochs=settings['training']['epochs']
 
 
-train_data_generator = util.KerasBatchGenerator(input_data, num_steps, batch_size, vocab,
+train_data_generator = util.KerasBatchGenerator(input_data, num_steps, batch_size, vocab + 2,
                                            skip_step=num_steps)
 
+
+print("max_word_count: " + str(max_word_count))
+print("vocab: " + str(vocab))
+
+# Create model
 model = Sequential()
 
 # embedding layer encodes tokens to unique vector representations
-model.add(Embedding(vocab, hidden_size, input_length=num_steps))
+model.add(Embedding(vocab + 2, hidden_size, input_length=num_steps))
 model.add(LSTM(hidden_size, return_sequences=True))
 model.add(LSTM(hidden_size, return_sequences=True))
-model.add(TimeDistributed(Dense(vocab)))
+model.add(TimeDistributed(Dense(vocab + 2)))
 model.add(Activation('softmax'))
 
 # Compile & run training
