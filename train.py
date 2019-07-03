@@ -35,12 +35,15 @@ t = util.loadTokenizer(settings['tokenizer']['production'])
 # this does refit the tokenizer 
 (vocab, input_data, ans_data) = util.loadTrainingData(settings['files']['training'], t)
 
+num_steps = settings['tokenizer']['max_word_count']
+batch_size = settings['training']['batch_size']
+num_epochs=settings['training']['epochs']
+
+train_data_generator = util.KerasBatchGenerator(input_data, num_steps, batch_size, vocab,
+                                           skip_step=num_steps)
+
 # train
-model.fit(input_data, ans_data,
-          batch_size=settings['training']['batch_size'],
-          epochs=settings['training']['epochs'],
-          verbose=1)
-          #callbacks=[TensorBoard(log_dir='logs')])
+model.fit_generator(train_data_generator.generate(), len(input_data)//(batch_size*num_steps), num_epochs)
 
 ## Save Model
 model.save(settings['model']['production'])

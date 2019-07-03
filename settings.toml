@@ -12,12 +12,12 @@ sets = ["chatterbot"]
 [tokenizer]
 production = 'tokenizer/p_tokenizer_pi.obj'
 oov_token  = 1
-max_word_count = 100
+max_word_count = 30
 num_words = 2000
 
 [model]
 production = 'models/production.h5'
 
 [training]
-batch_size = 5
-epochs = 2000
+batch_size = 20
+epochs = 50
