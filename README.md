@@ -40,7 +40,5 @@ This will be summed up with the output of the other sets and consolidated in dat
 
 # The Model
 ## LSTM - Long short term memory
-Useful introduction to the LSTM layer: https://adventuresinmachinelearning.com/keras-lstm-tutorial/
 
-This will be one of the primary layers for the model.
 
