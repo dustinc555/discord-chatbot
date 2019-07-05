@@ -39,6 +39,9 @@ This will be summed up with the output of the other sets and consolidated in dat
 * chatterbot: https://www.kaggle.com/kausr25/chatterbotenglish#botprofile.yml
 
 # The Model
+
+## Embedding
 ## LSTM - Long short term memory
+## Dense
 
 
