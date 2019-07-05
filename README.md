@@ -1,5 +1,5 @@
 # discord-chatbot
-Keras project to build a model intended for use by a Discord bot.
+Keras project to build a model intended for use by a Discord bot to talk to people.
 
 # Environment
 I have an amd gpu, so a docker container is provided that provides a suitable environment to utilize  an amd gpu.
