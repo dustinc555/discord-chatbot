@@ -24,11 +24,13 @@ The data trained on is located in data/train/data.txt; it is specified in settin
 The file consists of a list of sentences seperated by new lines. Every other sentence is a reply to the previous.
 *The end of sentence delimiter is the newline character.*
 
+Every dataset name listed in settings.toml->preperation->sets is used as a key in ```data_preperation_procedures``` to call a function that prepares the data.
+
 ## Adding sets
 1) Place the data set to its own sub folder in data/sets.
 2) Add a unique name for the set in settings.toml->preperation->sets.
-3) Create a function that has the same name put in preperation->sets in prep.py that parces this set.
-4) Add the function name to ```data_preperation_procedures``` in prep.py so that it may be called.
+3) Create a function that also has a unique name in preperation->sets in prep.py that parces the data.
+4) Add the function name to ```data_preperation_procedures``` in prep.py as a value with the name in step 2 as the key.  
 
 The function added in step 3 returns the data as (input sentence)\n(output sentence)\n ...
 This will be summed up with the output of the other sets and consolidated in data/train/data.txt.
