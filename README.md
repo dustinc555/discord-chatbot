@@ -39,9 +39,9 @@ This will be summed up with the output of the other sets and consolidated in dat
 * chatterbot: https://www.kaggle.com/kausr25/chatterbotenglish#botprofile.yml
 
 # The Model
+The model consists of the following layers:
 
-## Embedding
-## LSTM - Long short term memory
-## Dense
-
-
+* Embedding
+* LSTM - Long Short Term Memory
+* TimeDistributed
+* Dense
