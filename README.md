@@ -45,5 +45,4 @@ The model consists of the following layers:
 
 * Embedding
 * LSTM - Long Short Term Memory
-* TimeDistributed
 * Dense
