@@ -1,6 +1,6 @@
 # util.py
 # set of utility functions to make things smoother
-# includes: 
+# includes:
 # loadSettings, saveTokenizer, loadTokenizer
 
 from keras.models import Model
@@ -9,7 +9,6 @@ from keras.utils import to_categorical
 from keras.preprocessing.text import text_to_word_sequence
 import numpy as np
 import os
-import cv2
 import glob
 import toml
 import pickle
@@ -30,40 +29,49 @@ settings = loadSettings()
 # (input, answer) of tokens
 # tokenizer: https://keras.io/preprocessing/text/
 # note: a value must be specified for unknown words
-# or else it will be ignored and arrays of incorrect size 
+# or else it will be ignored and arrays of incorrect size
 # returned
 def loadTrainingData(path_to_data, tokenizer):
 
-    raw_text  = open(path_to_data).read()
     raw_data  = open(path_to_data).readlines()
-
+    max_word_count = settings['tokenizer']['max_word_count']
     oov_token = tokenizer.oov_token
+
+    # convert raw text to arrays of words (sequences)
+    raw_sequences = [text_to_word_sequence( line ) for line in raw_data]
+
+    # remove questions and answers that are above the max size
+    valid_data = []
+    for i in range(0, len(raw_sequences), 2):
+        if (len(raw_sequences[i]) <= max_word_count and len(raw_sequences[i + 1]) <= max_word_count):
+                valid_data.append(raw_sequences[i])
+                valid_data.append(raw_sequences[i + 1])
 
     # creates a map for words to tokens
     # higher frequency words will have a smaller
     # token value
     # note: ensure char_level is set to false (should be default)
-    tokenizer.fit_on_texts(raw_data)
+    tokenizer.fit_on_texts(valid_data)
 
     # convert raw text to arrays of words (sequences)
-    raw_sequences = [text_to_word_sequence( line ) for line in raw_data]
-
-    tokens        = tokenizer.texts_to_sequences(raw_sequences)    
-
-    # TODO look into a better way of determining max_word_count
-    max_word_count = settings['tokenizer']['max_word_count']
-    vocab          = len(tokenizer.word_counts)
+    tokens = tokenizer.texts_to_sequences(valid_data)
+    vocab = len(tokenizer.word_counts) + 2
 
     # pad to max size
-    # todo: possibly set limit for this
-    # convert to float and normalize
     tokens = [sub_tokens + [tokenizer.oov_token] * (max_word_count - len(sub_tokens)) for sub_tokens in tokens]
 
+    current_data = np.array(tokens[::2])
+    next_data = np.array(tokens[1::2])
 
-    tokens = [token for sentence in tokens for token in sentence]
+    previous_data = np.zeros(next_data.shape)
+    previous_data[0] = np.full(max_word_count, tokenizer.oov_token)
+    for i in range(1, len(current_data)):
+            previous_data[i] = next_data[i-1]
 
-    return (vocab, tokens[::2], tokens[1::2])
-    #return (vocab, input_set, ans_set)
+    # one hot encoding for answer set
+    next_data_categorical = np.array([to_categorical(ans, num_classes=vocab) for ans in next_data])
+
+    return (vocab, current_data, previous_data, next_data_categorical)
 
 def loadTokenizer(path):
     pickle_in = open(path, "rb")
@@ -79,10 +87,9 @@ def saveTokenizer(path, tokenizer):
 
 # converts the token a vector that uniqley identifies the
 # token by assigning its index to 1, the rest zero
-def token_to_vec(token, tokenizer):
-     vocab = len(tokenizer.word_counts) # this will be our vector length
-     vec = np.zeros(vocab + 2)
-     vec[token] = 1 
+def token_to_vec(vocab, token, tokenizer):
+     vec = np.zeros(vocab)
+     vec[token] = 1
      return vec
 
 
@@ -90,56 +97,65 @@ def token_to_vec(token, tokenizer):
 # predicts according to settings
 # model: production = 'models/production.h5'
 # tokenizer: production = 'tokenizer/p_tokenizer_pi.obj'
-def predict_production(text):
+def predict_production(current_text="", previous_text=""):
     model            = load_model(settings['model']['production'])
     tokenizer        = loadTokenizer(settings['tokenizer']['production'])
     max_word_count   = settings['tokenizer']['max_word_count']
     vocab            = len(tokenizer.word_counts)
-    word_sequence    = text_to_word_sequence(text)
-    tokens           = tokenizer.texts_to_sequences([word_sequence])[0]
-    tokens           = np.array([tokens + [tokenizer.oov_token] * (max_word_count - len(tokens))])
 
-    # make prediction
-    prediction = model.predict(tokens)[0]
+    word_sequences    = [text_to_word_sequence(current_text), text_to_word_sequence(previous_text)]
+    tokens           = tokenizer.texts_to_sequences(word_sequences)
+    padded_tokens           = np.array([sub_tokens + [tokenizer.oov_token] * (max_word_count - len(sub_tokens)) for sub_tokens in tokens])
 
-    # collect actual tokens
-    predicted_tokens = [np.argmax(vec) for vec in prediction]
 
-    # remove invalid token
-    predicted_tokens = list(filter(lambda x: x != 1, predicted_tokens))
+    prediction = model.predict([[padded_tokens[0]],[padded_tokens[1]]])[0]
+
+    predicted_tokens = [np.argmax(tok) for tok in prediction]
+
+    # remove empty space token
+    # essentially the oov_token is counted as empty space
+    predicted_tokens = list(filter(lambda x: x != tokenizer.oov_token, predicted_tokens))
+
+    # 0 is invalid and will raise an error upon translation
+    predicted_tokens = list(filter(lambda x: x != 0, predicted_tokens))
 
     predicted_text = tokenizer.sequences_to_texts([predicted_tokens])
-
 
     return ' '.join(predicted_text)
 
 
+# used in fitting the model in makemodel.py
+# using a generator assists with memory tax
 class KerasBatchGenerator(object):
 
-    def __init__(self, data, num_steps, batch_size, vocabulary, skip_step=5):
-        self.data = data
-        self.num_steps = num_steps
+    def __init__(self, data_x, data_y, max_word_count, tokenizer, batch_size, vocab):
+        self.data_x = data_x
+        self.data_y = data_y
         self.batch_size = batch_size
-        self.vocabulary = vocabulary
-        # this will track the progress of the batches sequentially through the
-        # data set - once the data reaches the end of the data set it will reset
-        # back to zero
+        self.vocab = vocab
+        self.max_word_count = max_word_count
+        self.tokenizer = tokenizer
         self.current_idx = 0
-        # skip_step is the number of words which will be skipped before the next
-        # batch is skimmed from the data set
-        self.skip_step = skip_step
 
     def generate(self):
-        x = np.zeros((self.batch_size, self.num_steps))
-        y = np.zeros((self.batch_size, self.num_steps, self.vocabulary))
+        previous_sentences   = np.zeros(self.max_word_count)
+        current_setnences    = np.zeros(self.max_word_count)
+        new_sentences        = np.zeros(self.max_word_count)
         while True:
-            for i in range(self.batch_size):
-                if self.current_idx + self.num_steps >= len(self.data):
-                    # reset the index back to the start of the data set
-                    self.current_idx = 0
-                x[i, :] = self.data[self.current_idx:self.current_idx + self.num_steps]
-                temp_y = self.data[self.current_idx + 1:self.current_idx + self.num_steps + 1]
-                # convert all of temp_y into a one hot representation
-                y[i, :, :] = to_categorical(temp_y, num_classes=self.vocabulary)
-                self.current_idx += self.skip_step
-            yield x, y
+                if self.current_idx >= len(self.data_x):
+                        # reset the index back to the start of the data set
+                        self.current_idx = 0
+
+                current_setnence = self.data_x[self.current_idx]
+
+                # if we are at 0, there was no previous sentence
+                # otherwise set it to last answer
+                if self.current_idx == 0:
+                        previous_sentences = np.full(self.max_word_count, self.tokenizer.oov_token)
+                else:
+                        previous_sentences = new_sentences
+
+                new_sentence = self.data_y[self.current_idx]
+
+                self.current_idx += 1
+                yield [current_setnences, previous_sentences], to_categorical(new_sentences, num_classes=self.vocab)

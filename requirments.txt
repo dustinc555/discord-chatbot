@@ -1,8 +1,7 @@
 keras
-tensorflow
+tensorflow-rocm
 numpy
 html5lib
 pandas
 pylint
 toml
-pickle

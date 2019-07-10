@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python
 from keras.models import Sequential
 from keras import backend as K
 from keras.layers import *
@@ -32,14 +32,12 @@ model = load_model(settings['model']['production'])
 t = util.loadTokenizer(settings['tokenizer']['production'])
 
 # load training data
-# this does refit the tokenizer 
+# this does refit the tokenizer
 (vocab, input_data, ans_data) = util.loadTrainingData(settings['files']['training'], t)
-
-vocab += 2
 
 num_steps = settings['tokenizer']['max_word_count']
 batch_size = settings['training']['batch_size']
-num_epochs=settings['training']['epochs']
+num_epochs = settings['training']['epochs']
 
 train_data_generator = util.KerasBatchGenerator(input_data, num_steps, batch_size, vocab,
                                            skip_step=num_steps)
@@ -49,7 +47,3 @@ model.fit_generator(train_data_generator.generate(), len(input_data)//(batch_siz
 
 ## Save Model
 model.save(settings['model']['production'])
-
-# tell dustin im done
-sys.stdout.write('\a')
-sys.stdout.flush()
