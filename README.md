@@ -15,9 +15,11 @@ retrained.
 
 The following process depends on the contents of settings.toml
 
-1. Data is prepared by running python3 prep.py 
-2. The model is created by running python3 makemodel.py, produces models/production.h5
+1. Data is prepared by running ```python prep.py``` -> data/training/data.txt 
+2. The model is created by running ```python makemodel.py``` -> produces models/production.h5
 3. The model may continue to be trained by running python3 train.py, trains models/production.h5
+
+It is important to note that the tokenizer is saved along with the model in settings['tokenizer']['production'].
 
 # Data
 The data trained on is located in data/train/data.txt; it is specified in settings.toml under files->training.
