@@ -37,7 +37,7 @@ This will be summed up with the output of the other sets and consolidated in dat
 
 ## Recommended sets
 * chatterbot: https://www.kaggle.com/kausr25/chatterbotenglish#botprofile.yml
-* NPS Chat https://www.kaggle.com/nltkdata/nps-chat
+* NPS Chat https://www.kaggle.com/nltkdata/nps-chat (demands sufficent parsing to be acceptable)
 
 # The Model
 The model consists of the following layers:
@@ -46,3 +46,7 @@ The model consists of the following layers:
 * Embedding
 * LSTM - Long Short Term Memory
 * Dense
+
+## LSTM - (Long Short Term Memory)
+This is one of the primary layers for the modedl
+I found this tutorial to be an adequate introduction: https://adventuresinmachinelearning.com/keras-lstm-tutorial/
