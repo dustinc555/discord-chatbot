@@ -5,3 +5,5 @@ html5lib
 pandas
 pylint
 toml
+discord.py
+xml

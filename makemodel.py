@@ -1,7 +1,3 @@
-#!/usr/bin/python3
-# makemodel.py
-# run this file to create the model and corresponding tokenizer
-
 from keras.models import load_model
 from keras.models import Sequential
 from keras import backend as K
@@ -45,7 +41,7 @@ max_word_count = settings['tokenizer']['max_word_count']
 # number of discovered words (vocab)
 (vocab, current_data, previous_data, next_data_categorical) = util.loadTrainingData(settings['files']['training'], t)
 
-hidden_size = vocab // 2
+hidden_size = vocab // 5
 batch_size = settings['training']['batch_size']
 num_epochs=settings['training']['epochs']
 
@@ -58,25 +54,30 @@ print("vocab: " + str(vocab))
 
 
 # Create model
-input_layer       = Input(shape=(max_word_count,), name='input_layer')
-context_layer     = Input(shape=(max_word_count,), name='context_layer')
+input_layer       = Input(shape=(max_word_count,), name='current__input_layer')
+context_layer     = Input(shape=(max_word_count,), name='previous_input_layer')
 
-LSTM_encoder = LSTM(hidden_size, return_sequences=True)
-LSTM_decoder = LSTM(hidden_size, return_sequences=True)
+
+
+LSTM_encoder  = LSTM(hidden_size, return_sequences=True)
+LSTM_decoder  = LSTM(hidden_size, return_sequences=True)
+
 
 Shared_Embedding = Embedding(output_dim=hidden_size,
                              input_dim=vocab,
                              input_length=max_word_count)
 
 word_embedding_context = Shared_Embedding(context_layer)
-context_embedding = LSTM_encoder(word_embedding_context)
+context_embedding = Dropout(.5)(LSTM_encoder1(word_embedding_context))
 
-word_embedding_answer = Shared_Embedding(input_layer)
-answer_embedding = LSTM_decoder(word_embedding_answer)
+word_embedding_input = Shared_Embedding(input_layer)
+input_embedding = Dropout(.5)(LSTM_encoder2(word_embedding_input))
 
-merge_layer = concatenate([context_embedding, answer_embedding])
+merge_layer = concatenate([input_embedding, context_embedding])
 
-out = Dense(vocab, activation='softmax')(merge_layer)
+decoded_layer = Dropout(.5)(LSTM_decoder(merge_layer))
+
+out = Dense(vocab, activation='softmax')(decoded_layer)
 
 model = Model(input=[context_layer, input_layer], output = [out])
 
@@ -96,3 +97,4 @@ model.save(settings['model']['production'])
 
 # save tokenizer
 util.saveTokenizer(settings['tokenizer']['production'], t)
+

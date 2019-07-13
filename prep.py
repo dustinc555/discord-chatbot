@@ -9,6 +9,8 @@ import util
 import glob
 import yaml
 import pandas as pd
+import re
+import xml.etree.ElementTree as ET
 
 settings = util.loadSettings()
 datasets_dir = settings['directories']['datasets']
@@ -16,21 +18,27 @@ datasets_dir = settings['directories']['datasets']
 # parses data in custom folder
 # these are my personal entries
 # they can be added directly with no actual parsing
-def parse_custom():
+def parse_nps():
     # load files
-    file_paths = glob.glob(datasets_dir + "/custom/*.txt")
-
-    data = ""
-
-    for fp in file_paths:
-        custom_doc = open(fp).read()
-        data += custom_doc
-
-    return data
-
-def massage_nps():
-
     file_paths = glob.glob(datasets_dir + "/nps_chat/*.xml")
+
+    data = ""
+
+    for fp in file_paths:
+        tree = ET.parse(open(fp))
+        root = tree.getroot()
+
+        for child in root[0]:
+            text = re.sub(r"(.\S*User.\S*)", " friend ", child.text)
+            if "PART" in text or "JOIN" in text:
+                continue
+            data += text + '\n'
+
+    return data
+
+def parse_custom():
+
+    file_paths = glob.glob(datasets_dir + "/custom/*.txt")
     data = ""
 
     for fp in file_paths:
@@ -38,9 +46,8 @@ def massage_nps():
         data += custom_doc
 
     return data
-    return 0
 
-def massage_chatterbot():
+def parse_chatterbot():
 	# load files
 	file_paths = glob.glob(datasets_dir + "/chatterbot/*.yml")
 
@@ -57,9 +64,9 @@ def massage_chatterbot():
 
 # event dispatch table for loading datasets
 data_preperation_procedures = {
-	    "chatterbot" : massage_chatterbot,
+	    "chatterbot" : parse_chatterbot,
         "custom" : parse_custom,
-        #"nps" : massage_nps
+        "nps" : parse_nps
 }
 
 def run():
@@ -72,6 +79,10 @@ def run():
 
     # parse out already encountered words
     lines = data_file_content.splitlines()
+
+    #lines = ["<SOS> " + line + " <EOS>" for line in lines]
+
+    data_file_content = '\n'.join(lines)
 
     #save parsed data
     data_file = open(settings['files']['training'], "w")
