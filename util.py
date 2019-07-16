@@ -13,25 +13,22 @@ import glob
 import toml
 import pickle
 import math
+import random
 
-# returns settings dictionary
-# must be in same dir as settings.toml to work
 def loadSettings():
-	f = open("settings.toml")
-	settings_content = f.read()
-	f.close()
-	return toml.loads(settings_content)
-
+    '''# returns settings dictionary must be in same dir as settings.toml to work'''
+    f = open("settings.toml")
+    settings_content = f.read()
+    f.close()
+    return toml.loads(settings_content)
 
 settings = loadSettings()
 
-# returns 2 2d numpy arrays
-# (input, answer) of tokens
-# tokenizer: https://keras.io/preprocessing/text/
-# note: a value must be specified for unknown words
-# or else it will be ignored and arrays of incorrect size
-# returned
-def loadTrainingData(path_to_data, tokenizer):
+def load_and_process_data(path_to_data, tokenizer):
+    '''returns (vocab, current, previous, anser_categorical)
+    current and previous are vectors of word tokens,
+    tokenizer: https://keras.io/preprocessing/text/
+    unknown words are converted with tokenizer.oov_token'''
 
     raw_data  = open(path_to_data).readlines()
     max_word_count = settings['tokenizer']['max_word_count']
@@ -39,6 +36,12 @@ def loadTrainingData(path_to_data, tokenizer):
 
     # convert raw text to arrays of words (sequences)
     raw_sequences = [text_to_word_sequence( line ) for line in raw_data]
+
+    # prints the size of the largest sentence in data
+    max_sentence_length = 0
+    for sen in raw_sequences:
+            max_sentence_length = max(max_sentence_length, len(sen))
+    print("make sized sequence: " + str(max_sentence_length))
 
     # remove questions and answers that are above the max size
     valid_data = []
@@ -48,10 +51,11 @@ def loadTrainingData(path_to_data, tokenizer):
                 valid_data.append(raw_sequences[i + 1])
 
     # creates a map for words to tokens
-    # higher frequency words will have a smaller
-    # token value
-    # note: ensure char_level is set to false (should be default)
+    # higher frequency words will have a smaller token value
+    # note: ensure char_level is set to false
     tokenizer.fit_on_texts(valid_data)
+
+    print(tokenizer.word_docs)
 
     # convert raw text to arrays of words (sequences)
     tokens = tokenizer.texts_to_sequences(valid_data)
@@ -60,18 +64,31 @@ def loadTrainingData(path_to_data, tokenizer):
     # pad to max size
     tokens = [sub_tokens + [tokenizer.oov_token] * (max_word_count - len(sub_tokens)) for sub_tokens in tokens]
 
-    current_data = np.array(tokens[::2])
-    next_data = np.array(tokens[1::2])
+    input_data = tokens[::2]
+    next_data = tokens[1::2]
 
-    previous_data = np.zeros(next_data.shape)
-    previous_data[0] = np.full(max_word_count, tokenizer.oov_token)
-    for i in range(1, len(current_data)):
-            previous_data[i] = next_data[i-1]
+    context_user = [[tokenizer.oov_token] * max_word_count]
+    for i in range(len(input_data) - 1):
+        context_user.append(input_data[i])
+
+    context_bot = [[tokenizer.oov_token] * max_word_count]
+    for i in range(len(next_data) - 1):
+        context_bot.append(next_data[i])
 
     # one hot encoding for answer set
-    next_data_categorical = np.array([to_categorical(ans, num_classes=vocab) for ans in next_data])
+    next_categorical = np.array([to_categorical(ans, num_classes=vocab) for ans in next_data])
 
-    return (vocab, current_data, previous_data, next_data_categorical)
+    return (vocab, np.array(input_data), np.array(context_user), np.array(context_bot), next_categorical, next_data)
+
+def load_training_data():
+        '''returns the pickled data'''
+        file_pi = open(settings['files']['data'], 'rb')
+        return pickle.loads(file_pi.read())
+
+def save_training_data(data):
+        '''pickles the processed tokens'''
+        file_handle = open(settings['files']['data'], 'wb')
+        pickle.dump(data, file_handle)
 
 def loadTokenizer(path):
     pickle_in = open(path, "rb")
@@ -84,78 +101,100 @@ def saveTokenizer(path, tokenizer):
     pickle.dump(tokenizer, pickel_out, protocol=pickle.HIGHEST_PROTOCOL)
     pickel_out.close()
 
+def tokens_to_words(tokens, tokenizer):
+    # remove oov_token
+    tokens = list(filter(lambda x: x != tokenizer.oov_token, tokens))
 
-# converts the token a vector that uniqley identifies the
-# token by assigning its index to 1, the rest zero
-def token_to_vec(vocab, token, tokenizer):
-     vec = np.zeros(vocab)
-     vec[token] = 1
-     return vec
+    # 0 is invalid and will raise an error upon translation
+    tokens = list(filter(lambda x: x != 0, tokens))
 
+    # finally get sequences back from predicted tokens
+    predicted_text = tokenizer.sequences_to_texts([tokens])
 
-# returns a reply to the given texts
-# predicts according to settings
-# model: production = 'models/production.h5'
-# tokenizer: production = 'tokenizer/p_tokenizer_pi.obj'
-def predict_production(current_text="", previous_text=""):
+    # space out words
+    return ' '.join(predicted_text)
+
+def predict_production(input_text="", context_user="", context_bot=""):
+    ''' returns a reply to the given texts
+ predicts according to settings
+ model: production = 'models/production.h5'
+ tokenizer: production = 'tokenizer/p_tokenizer_pi.obj'''
+
     model            = load_model(settings['model']['production'])
     tokenizer        = loadTokenizer(settings['tokenizer']['production'])
     max_word_count   = settings['tokenizer']['max_word_count']
-    vocab            = len(tokenizer.word_counts)
+    vocab            = len(tokenizer.word_counts) + 2
 
-    word_sequences    = [text_to_word_sequence(current_text), text_to_word_sequence(previous_text)]
-    tokens           = tokenizer.texts_to_sequences(word_sequences)
-    padded_tokens           = np.array([sub_tokens + [tokenizer.oov_token] * (max_word_count - len(sub_tokens)) for sub_tokens in tokens])
+    # convert to sequences of text i.e. ["the", "dog", "barked"]
+    word_sequences = [text_to_word_sequence(input_text), text_to_word_sequence(context_user), text_to_word_sequence(context_bot)]
+    # convert to tokens: [4, 42, 85]
+    tokens = tokenizer.texts_to_sequences(word_sequences)
+    # pad tokens: [4, 42, 85, 1, 1, 1, 1, 1]
+    padded_tokens = np.array([sub_tokens + [tokenizer.oov_token] * (max_word_count - len(sub_tokens)) for sub_tokens in tokens])
 
 
-    prediction = model.predict([[padded_tokens[0]],[padded_tokens[1]]])[0]
+    input_text_idx = 0
+    context_user_idx = 1
+    context_bot_idx = 2
+    prediction = model.predict([[padded_tokens[input_text_idx]],
+                                [padded_tokens[context_user_idx]],
+                                [padded_tokens[context_bot_idx]]])[0]
 
+    # get most likley chars in the sequence from prediction
     predicted_tokens = [np.argmax(tok) for tok in prediction]
 
-    # remove empty space token
-    # essentially the oov_token is counted as empty space
+    print("predicted_tokens: " + str(predicted_tokens))
+
+    # remove oov_token
     predicted_tokens = list(filter(lambda x: x != tokenizer.oov_token, predicted_tokens))
 
     # 0 is invalid and will raise an error upon translation
     predicted_tokens = list(filter(lambda x: x != 0, predicted_tokens))
 
+    # finally get sequences back from predicted tokens
     predicted_text = tokenizer.sequences_to_texts([predicted_tokens])
 
+    # space out words
     return ' '.join(predicted_text)
 
-
-# used in fitting the model in makemodel.py
-# using a generator assists with memory tax
 class KerasBatchGenerator(object):
 
-    def __init__(self, data_x, data_y, max_word_count, tokenizer, batch_size, vocab):
-        self.data_x = data_x
-        self.data_y = data_y
+    '''Used to fit the model
+    this class shuffles the context and the response data to
+    help the bot with transitions'''
+    def __init__(self, context_questions, context_answers, input_data, answer_categorical, tokenizer, batch_size, vocab):
+        self.context_questions = context_questions
+        self.context_answers = context_answers
+        self.input_data = input_data
+        self.answers_categorical = answer_categorical
         self.batch_size = batch_size
         self.vocab = vocab
-        self.max_word_count = max_word_count
         self.tokenizer = tokenizer
         self.current_idx = 0
+        self.cq = np.full(self.context_questions.shape, self.tokenizer.oov_token)
+        self.ca = np.full((self.batch_size,) + self.context_answers.shape, self.tokenizer.oov_token)
+        self.ui = np.full((self.batch_size,) + self.context_answers.shape, self.tokenizer.oov_token)
+        self.ac = np.zeros((self.batch_size,) + self.answers_categorical.shape)
 
     def generate(self):
-        previous_sentences   = np.zeros(self.max_word_count)
-        current_setnences    = np.zeros(self.max_word_count)
-        new_sentences        = np.zeros(self.max_word_count)
         while True:
-                if self.current_idx >= len(self.data_x):
-                        # reset the index back to the start of the data set
-                        self.current_idx = 0
+            # ca - context_answer
+            # cq - context_question
+            # -------------------------
+            # ui - user_input
+            # ac - answer_categorical
+            # -------------------------
+            # shuffle the context with the answers
 
-                current_setnence = self.data_x[self.current_idx]
+            for i in range(self.batch_size):
+                ca_cq_index = random.randint(0, len(self.context_answers) - 1)
+                ui_ac_index = random.randint(0, len(self.input_data) - 1)
 
-                # if we are at 0, there was no previous sentence
-                # otherwise set it to last answer
-                if self.current_idx == 0:
-                        previous_sentences = np.full(self.max_word_count, self.tokenizer.oov_token)
-                else:
-                        previous_sentences = new_sentences
+                while ui_ac_index != ca_cq_index:
+                    ui_ac_index += 1
+                self.cq[i] = self.context_questions[ca_cq_index]
+                self.ca[i] = self.context_answers[ca_cq_index]
+                self.ui[i] = self.input_data[ui_ac_index]
+                self.ac[i] = self.answers_categorical[ui_ac_index]
 
-                new_sentence = self.data_y[self.current_idx]
-
-                self.current_idx += 1
-                yield [current_setnences, previous_sentences], to_categorical(new_sentences, num_classes=self.vocab)
+            yield [self.cq, self.ca, self.ui], self.ac

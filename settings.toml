@@ -4,9 +4,10 @@ datasets = "data/sets"
 
 [files]
 training = 'data/train/data.txt'
+data     = 'data/train/data_pi.obj'
 
 [preperation]
-sets = ["chatterbot", "custom", "nps"]
+sets = ["chatterbot", "custom"]
 
 [tokenizer]
 production = 'tokenizer/p_tokenizer_pi.obj'
@@ -18,5 +19,5 @@ num_words = 6000
 production = 'models/production.h5'
 
 [training]
-batch_size = 200
-epochs = 500
+batch_size = 100
+epochs = 1000

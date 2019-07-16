@@ -11,14 +11,15 @@ import yaml
 import pandas as pd
 import re
 import xml.etree.ElementTree as ET
+import random
 
 settings = util.loadSettings()
 datasets_dir = settings['directories']['datasets']
 
-# parses data in custom folder
-# these are my personal entries
-# they can be added directly with no actual parsing
 def parse_nps():
+    '''parses data in custom folder
+    these are my personal entries
+    they can be added directly with no actual parsing'''
     # load files
     file_paths = glob.glob(datasets_dir + "/nps_chat/*.xml")
 
@@ -30,10 +31,14 @@ def parse_nps():
 
         for child in root[0]:
             text = re.sub(r"(.\S*User.\S*)", " friend ", child.text)
-            if "PART" in text or "JOIN" in text:
+            if "PART" in text or "JOIN" in text or "ACTION" in text:
                 continue
-            data += text + '\n'
 
+            if "friend" in text:
+                if random.randint(0,1) == 1:
+                    continue
+
+            data += text + '\n'
     return data
 
 def parse_custom():
