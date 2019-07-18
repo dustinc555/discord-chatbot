@@ -16,7 +16,7 @@ import math
 import random
 
 def loadSettings():
-    '''# returns settings dictionary must be in same dir as settings.toml to work'''
+    '''returns settings dictionary must be in same dir as settings.toml to work'''
     f = open("settings.toml")
     settings_content = f.read()
     f.close()
@@ -24,24 +24,59 @@ def loadSettings():
 
 settings = loadSettings()
 
-def load_and_process_data(path_to_data, tokenizer):
-    '''returns (vocab, current, previous, anser_categorical)
-    current and previous are vectors of word tokens,
-    tokenizer: https://keras.io/preprocessing/text/
-    unknown words are converted with tokenizer.oov_token'''
+def validate_texts(texts):
+	'''texts: list of sentences
+	returns a list of valid sentences'''
+	return
 
-    raw_data  = open(path_to_data).readlines()
+def load_data_dictionary():
+    '''returns a dictionary that contains:
+		texts -> data as readable text
+		tokens -> data processed as tokens'''
+    tokenizer = loadTokenizer(settings['tokenizer']['production'])
+    data = {}        
+    raw_data = open(settings['data']['production']).readlines()
     max_word_count = settings['tokenizer']['max_word_count']
     oov_token = tokenizer.oov_token
 
     # convert raw text to arrays of words (sequences)
     raw_sequences = [text_to_word_sequence( line ) for line in raw_data]
 
-    # prints the size of the largest sentence in data
-    max_sentence_length = 0
-    for sen in raw_sequences:
-            max_sentence_length = max(max_sentence_length, len(sen))
-    print("make sized sequence: " + str(max_sentence_length))
+    # remove questions and answers that are above the max size
+    valid_data = []
+    for i in range(0, len(raw_sequences), 2):
+        if (len(raw_sequences[i]) <= max_word_count and len(raw_sequences[i + 1]) <= max_word_count):
+                valid_data.append(raw_sequences[i])
+                valid_data.append(raw_sequences[i + 1])
+
+    # creates a map for words to tokens
+    # higher frequency words will have a smaller token value
+    # note: ensure char_level is set to false
+    tokenizer.fit_on_texts(valid_data)
+
+    # convert raw text to arrays of words (sequences)
+    tokens = tokenizer.texts_to_sequences(valid_data)
+
+    # pad to max size
+    tokens = [sub_tokens + [tokenizer.oov_token] * (max_word_count - len(sub_tokens)) for sub_tokens in tokens]
+
+    data['texts'] = [' '.join(sentence) for sentence in valid_data]
+    data['tokens'] = np.array(tokens)
+    return data
+
+
+def load_and_process_data(path_to_data, tokenizer):
+    '''returns (vocab, current, previous, anser_categorical)
+    current and previous are vectors of word tokens,
+    tokenizer: https://keras.io/preprocessing/text/
+    unknown words are converted with tokenizer.oov_token'''
+
+    raw_data = open(path_to_data).readlines()
+    max_word_count = settings['tokenizer']['max_word_count']
+    oov_token = tokenizer.oov_token
+
+    # convert raw text to arrays of words (sequences)
+    raw_sequences = [text_to_word_sequence( line ) for line in raw_data]
 
     # remove questions and answers that are above the max size
     valid_data = []
@@ -101,7 +136,7 @@ def saveTokenizer(path, tokenizer):
     pickle.dump(tokenizer, pickel_out, protocol=pickle.HIGHEST_PROTOCOL)
     pickel_out.close()
 
-def tokens_to_words(tokens, tokenizer):
+def tokens_to_sentence(tokens, tokenizer):
     # remove oov_token
     tokens = list(filter(lambda x: x != tokenizer.oov_token, tokens))
 
@@ -113,6 +148,16 @@ def tokens_to_words(tokens, tokenizer):
 
     # space out words
     return ' '.join(predicted_text)
+
+def sentence_to_tokens(sentence):
+	tokenizer = loadTokenizer(settings['tokenizer']['production'])
+	max_word_count = settings['tokenizer']['max_word_count']
+
+	word_sequence = text_to_word_sequence(sentence)
+
+	tokens = tokenizer.texts_to_sequences([word_sequence])[0]
+
+	return np.array(tokens + [tokenizer.oov_token] * (max_word_count - len(tokens)))
 
 def predict_production(input_text="", context_user="", context_bot=""):
     ''' returns a reply to the given texts

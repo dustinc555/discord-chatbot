@@ -6,6 +6,9 @@ datasets = "data/sets"
 training = 'data/train/data.txt'
 data     = 'data/train/data_pi.obj'
 
+[data]
+production = 'data/train/data.txt'
+
 [preperation]
 sets = ["chatterbot", "custom"]
 

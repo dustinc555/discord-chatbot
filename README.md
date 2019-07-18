@@ -43,8 +43,6 @@ This will be summed up with the output of the other sets and consolidated in dat
 
 # The Model
 The model consists of the following layers:
-(Graphic coming soon)
-
 * Embedding
 * LSTM - Long Short Term Memory
 * Dense
@@ -52,3 +50,10 @@ The model consists of the following layers:
 ## LSTM - (Long Short Term Memory)
 This is one of the primary layers for the modedl
 I found this tutorial to be an adequate introduction: https://adventuresinmachinelearning.com/keras-lstm-tutorial/
+
+# PCA - Principal Components Analysis
+![](qa.png)
+
+Basic sentences are clustered together but more complicated sentences fringe out.
+
+It's observable that answers tend to be more complex words than questions. 
