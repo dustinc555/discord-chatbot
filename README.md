@@ -13,7 +13,7 @@ Note: The model cannot learn on words dynamically, words that it receives that a
 unknown are given a special token. In order to learn more words the process needs to start over and the model
 retrained. 
 
-The following process depends on the contents of settings.toml
+The following process depends on the contents of ```settings.toml```.
 
 1. Data is prepared by running ```python prep.py``` -> data/training/data.txt 
 2. The model is created by running ```python makemodel.py``` -> produces models/production.h5
