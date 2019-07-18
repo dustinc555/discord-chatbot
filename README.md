@@ -13,25 +13,24 @@ Note: The model cannot learn on words dynamically, words that it receives that a
 unknown are given a special token. In order to learn more words the process needs to start over and the model
 retrained. 
 
-The following process depends on the contents of ```settings.toml```.
+The following process depends on the contents of ```settings.toml```
 
 1. Data is prepared by running ```python prep.py``` -> data/training/data.txt 
 2. The model is created by running ```python makemodel.py``` -> produces models/production.h5
-3. The model may continue to be trained by running python3 train.py, trains models/production.h5
+3. The model may continue to be trained by running python3 ```train.py```, trains models/production.h5
 
-It is important to note that the tokenizer is saved along with the model in settings['tokenizer']['production'].
+It is important to note that the tokenizer is saved along with the model in ```settings['tokenizer']['production']```
 
 # Data
-The data trained on is located in data/train/data.txt; it is specified in settings.toml under files->training.
+The data trained on is located in data/train/data.txt; it is specified in ```settings.toml``` under files->training.
 The file consists of a list of sentences seperated by new lines. Every other sentence is a reply to the previous.
-*The end of sentence delimiter is the newline character.*
 
-Every dataset name listed in settings.toml->preperation->sets is used as a key in ```data_preperation_procedures``` to call a function that prepares the data.
+Every dataset name listed in ```settings.toml->preperation->sets``` is used as a key in ```data_preperation_procedures``` to call a function that prepares the data.
 
 ## Adding sets
 1) Place the data set to its own sub folder in data/sets.
-2) Add a unique name for the set in settings.toml->preperation->sets.
-3) Create a function that also has a unique name in preperation->sets in prep.py that parces the data.
+2) Add a unique name for the set in ```settings.toml->preperation->sets```.
+3) Create a function that also has a unique name in ```preperation->sets``` in ```prep.py``` that parces the data.
 4) Add the function name to ```data_preperation_procedures``` in prep.py as a value with the name in step 2 as the key.  
 
 The function added in step 3 returns the data as (input sentence)\n(output sentence)\n ...
