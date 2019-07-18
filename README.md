@@ -56,4 +56,4 @@ I found this tutorial to be an adequate introduction: https://adventuresinmachin
 
 Basic sentences are clustered together but more complicated sentences fringe out.
 
-It's observable that answers tend to be more complex words than questions. 
+It's observable that answers tend to be more complex sentences than questions. 
