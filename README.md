@@ -54,4 +54,5 @@ I found this tutorial to be an adequate introduction: https://adventuresinmachin
 ![](qa.png)
 
 Basic sentences are clustered together but more complicated sentences fringe out.
+
 See PCA_example.ipynb for more details.
