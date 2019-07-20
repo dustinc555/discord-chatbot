@@ -39,7 +39,7 @@ max_word_count = settings['tokenizer']['max_word_count']
 # loadTrainingData fits the data to the tokenizer and
 # returns the question and answers as numpy array of tokens we well as the
 # number of discovered words (vocab)
-(vocab, input_data, context_user, context_bot, next_data_categorical, next_data) = util.load_and_process_data(settings['files']['training'], t)
+(vocab, input_data, context, next_data_categorical) = util.load_and_process_data(settings['files']['training'], t)
 
 hidden_size = 800
 batch_size = settings['training']['batch_size']
@@ -54,33 +54,29 @@ print("vocab: " + str(vocab))
 
 
 # Create model
-input_layer = Input(shape=(max_word_count,), name='current_question')
-context_layer_user = Input(shape=(max_word_count,), name='context_user')
-context_layer_bot = Input(shape=(max_word_count,), name='context_bot')
+input_layer = Input(shape=(max_word_count,), name='user_input')
+context_layer = Input(shape=(max_word_count,), name='context_input')
 
-input_embedding = Embedding(output_dim=hidden_size, input_dim=vocab, input_length=max_word_count)
-context_embedding_user = Embedding(output_dim=hidden_size, input_dim=vocab, input_length=max_word_count)
-context_embedding_bot = Embedding(output_dim=hidden_size, input_dim=vocab, input_length=max_word_count)
+shared_embedding = Embedding(output_dim=hidden_size, input_dim=vocab, input_length=max_word_count)
 
-embedding_input = input_embedding(input_layer)
-embedding_context_user = context_embedding_user(context_layer_user)
-embedding_context_bot = context_embedding_bot(context_layer_bot)
+embedding_input = shared_embedding(input_layer)
+embedding_context = shared_embedding(context_layer)
 
 LSTM_encoder = LSTM(hidden_size, return_sequences = True, dropout = .5, recurrent_dropout = .5)
 LSTM_decoder = LSTM(hidden_size, return_sequences = True, dropout = .5, recurrent_dropout = .5)
 
-merge_layer = add([embedding_input, embedding_context_user, embedding_context_bot])
+merge_layer = concatenate([embedding_context, embedding_input])
 encoded_layer = LSTM_encoder(merge_layer)
 decoded_layer = LSTM_decoder(encoded_layer)
 
 out = Dense(vocab, activation='softmax')(decoded_layer)
 
-model = Model(input=[input_layer, context_layer_user, context_layer_bot], output = [out])
+model = Model(input=[input_layer, context_layer], output = [out])
 
 # Compile & run training
 model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
 
-model.fit([input_data, context_user, context_bot], next_data_categorical,
+model.fit([input_data, context], next_data_categorical,
          batch_size=batch_size,
          epochs=num_epochs)
 
@@ -94,4 +90,4 @@ model.save(settings['model']['production'])
 
 # save tokenizer
 util.saveTokenizer(settings['tokenizer']['production'], t)
-util.save_training_data([vocab, input_data, context_user, context_bot, next_data_categorical])
+util.save_training_data([vocab, input_data, context, next_data_categorical])

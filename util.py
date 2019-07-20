@@ -34,7 +34,7 @@ def load_data_dictionary():
 		texts -> data as readable text
 		tokens -> data processed as tokens'''
     tokenizer = loadTokenizer(settings['tokenizer']['production'])
-    data = {}        
+    data = {}
     raw_data = open(settings['data']['production']).readlines()
     max_word_count = settings['tokenizer']['max_word_count']
     oov_token = tokenizer.oov_token
@@ -90,8 +90,6 @@ def load_and_process_data(path_to_data, tokenizer):
     # note: ensure char_level is set to false
     tokenizer.fit_on_texts(valid_data)
 
-    print(tokenizer.word_docs)
-
     # convert raw text to arrays of words (sequences)
     tokens = tokenizer.texts_to_sequences(valid_data)
     vocab = len(tokenizer.word_counts) + 2
@@ -102,18 +100,22 @@ def load_and_process_data(path_to_data, tokenizer):
     input_data = tokens[::2]
     next_data = tokens[1::2]
 
-    context_user = [[tokenizer.oov_token] * max_word_count]
+    context = [[tokenizer.oov_token] * max_word_count]
     for i in range(len(input_data) - 1):
-        context_user.append(input_data[i])
+        context.append(next_data[i])
 
-    context_bot = [[tokenizer.oov_token] * max_word_count]
-    for i in range(len(next_data) - 1):
-        context_bot.append(next_data[i])
+    # context_user = [[tokenizer.oov_token] * max_word_count]
+    # for i in range(len(input_data) - 1):
+    #     context_user.append(input_data[i])
+
+    # context_bot = [[tokenizer.oov_token] * max_word_count]
+    # for i in range(len(next_data) - 1):
+    #     context_bot.append(next_data[i])
 
     # one hot encoding for answer set
     next_categorical = np.array([to_categorical(ans, num_classes=vocab) for ans in next_data])
 
-    return (vocab, np.array(input_data), np.array(context_user), np.array(context_bot), next_categorical, next_data)
+    return (vocab, np.array(input_data), np.array(context), next_categorical)
 
 def load_training_data():
         '''returns the pickled data'''
@@ -159,7 +161,7 @@ def sentence_to_tokens(sentence):
 
 	return np.array(tokens + [tokenizer.oov_token] * (max_word_count - len(tokens)))
 
-def predict_production(input_text="", context_user="", context_bot=""):
+def predict_production(input_text="", context=""):
     ''' returns a reply to the given texts
  predicts according to settings
  model: production = 'models/production.h5'
@@ -171,7 +173,7 @@ def predict_production(input_text="", context_user="", context_bot=""):
     vocab            = len(tokenizer.word_counts) + 2
 
     # convert to sequences of text i.e. ["the", "dog", "barked"]
-    word_sequences = [text_to_word_sequence(input_text), text_to_word_sequence(context_user), text_to_word_sequence(context_bot)]
+    word_sequences = [text_to_word_sequence(input_text), text_to_word_sequence(context)]
     # convert to tokens: [4, 42, 85]
     tokens = tokenizer.texts_to_sequences(word_sequences)
     # pad tokens: [4, 42, 85, 1, 1, 1, 1, 1]
@@ -179,11 +181,9 @@ def predict_production(input_text="", context_user="", context_bot=""):
 
 
     input_text_idx = 0
-    context_user_idx = 1
-    context_bot_idx = 2
+    context_idx = 1
     prediction = model.predict([[padded_tokens[input_text_idx]],
-                                [padded_tokens[context_user_idx]],
-                                [padded_tokens[context_bot_idx]]])[0]
+                                [padded_tokens[context_idx]]])[0]
 
     # get most likley chars in the sequence from prediction
     predicted_tokens = [np.argmax(tok) for tok in prediction]
