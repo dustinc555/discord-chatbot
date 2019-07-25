@@ -42,9 +42,8 @@ This will be summed up with the output of the other sets and consolidated in dat
 
 # The Model
 The model consists of the following layers:
-* Embedding
-* LSTM - Long Short Term Memory
-* Dense
+![](model.png)
+
 
 ## LSTM - (Long Short Term Memory)
 This is one of the primary layers for the modedl
