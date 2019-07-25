@@ -41,7 +41,6 @@ This will be summed up with the output of the other sets and consolidated in dat
 * NPS Chat https://www.kaggle.com/nltkdata/nps-chat
 
 # The Model
-The model consists of the following layers:
 ![](model.png)
 
 
