@@ -52,5 +52,5 @@ I found this tutorial to be an adequate introduction: https://adventuresinmachin
 ![](qa.png)
 
 Basic sentences are clustered together but more complicated sentences fringe out.
-
-See PCA_example.ipynb for more details.
+I found that a large number of the components is required to capture 90% or more of the
+information a given sentence contains. 
