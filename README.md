@@ -47,7 +47,7 @@ This will be summed up with the output of the other sets and consolidated in dat
 
 
 ## LSTM - (Long Short Term Memory)
-This is one of the primary layers for the modedl
+This is the primary layers for the model. It helps predict the next steps with a given frequency (sentences).
 I found this tutorial to be an adequate introduction: https://adventuresinmachinelearning.com/keras-lstm-tutorial/
 
 # Analysis
