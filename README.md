@@ -2,7 +2,9 @@
 Keras project to build a model intended for use by a Discord bot to talk to people.
 
 # Environment
-I have an amd gpu, so a docker container is provided that supports it. If you do not have an amd gpu, you can change what tensorflow version is installed in ```requirments.py```.
+I have an amd gpu, so a docker container is provided that supports it. 
+
+If you do not have an amd gpu, you can change what tensorflow is installed in ```requirments.py```.
 
 
 # Process
@@ -48,9 +50,34 @@ This will be summed up with the output of the other sets and consolidated in dat
 This is one of the primary layers for the modedl
 I found this tutorial to be an adequate introduction: https://adventuresinmachinelearning.com/keras-lstm-tutorial/
 
-# PCA - Principal Components Analysis
+# Analysis
+## PCA
 ![](qa.png)
 
 Basic sentences are clustered together but more complicated sentences fringe out.
 I found that a large number of the components is required to capture 90% or more of the
 information a given sentence contains. 
+
+## Vocab representation
+The Keras tokenizer can provided a wealth of information.
+Ex: This snippet taken from: https://machinelearningmastery.com/prepare-text-data-deep-learning-keras/
+```python3
+# define 5 documents
+docs = ['Well done!',
+		'Good work',
+		'Great effort',
+		'nice work',
+		'Excellent!']
+# create the tokenizer
+t = Tokenizer()
+# fit the tokenizer on the documents
+t.fit_on_texts(docs)
+# summarize what was learned
+print(t.word_counts)
+print(t.document_count)
+print(t.word_index)
+print(t.word_docs)
+# integer encode documents
+encoded_docs = t.texts_to_matrix(docs, mode='count')
+print(encoded_docs)
+```
