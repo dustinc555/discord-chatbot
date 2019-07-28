@@ -81,3 +81,14 @@ print(t.word_docs)
 encoded_docs = t.texts_to_matrix(docs, mode='count')
 print(encoded_docs)
 ```
+```
+OrderedDict([('well', 1), ('done', 1), ('good', 1), ('work', 2), ('great', 1), ('effort', 1), ('nice', 1), ('excellent', 1)])
+5
+{'work': 1, 'effort': 6, 'done': 3, 'great': 5, 'good': 4, 'excellent': 8, 'well': 2, 'nice': 7}
+{'work': 2, 'effort': 1, 'done': 1, 'well': 1, 'good': 1, 'great': 1, 'excellent': 1, 'nice': 1}
+[[ 0.  0.  1.  1.  0.  0.  0.  0.  0.]
+ [ 0.  1.  0.  0.  1.  0.  0.  0.  0.]
+ [ 0.  0.  0.  0.  0.  1.  1.  0.  0.]
+ [ 0.  1.  0.  0.  0.  0.  0.  1.  0.]
+ [ 0.  0.  0.  0.  0.  0.  0.  0.  1.]]
+ ```
