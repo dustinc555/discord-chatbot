@@ -2,7 +2,9 @@
 Keras project to build a model intended for use by a Discord bot to talk to people.
 
 # Environment
-I have an amd gpu, so a docker container is provided that supports it. If you do not have an amd gpu, you can change what tensorflow version is installed in ```requirments.py```.
+I have an amd gpu, so a docker container is provided that supports it. 
+
+If you do not have an amd gpu, you can change what tensorflow is installed in ```requirments.py```.
 
 
 # Process
@@ -41,18 +43,52 @@ This will be summed up with the output of the other sets and consolidated in dat
 * NPS Chat https://www.kaggle.com/nltkdata/nps-chat
 
 # The Model
-The model consists of the following layers:
-* Embedding
-* LSTM - Long Short Term Memory
-* Dense
+![](model.png)
+
 
 ## LSTM - (Long Short Term Memory)
-This is one of the primary layers for the modedl
+This is the primary layers for the model. It helps predict the next steps with a given frequency (sentences).
 I found this tutorial to be an adequate introduction: https://adventuresinmachinelearning.com/keras-lstm-tutorial/
 
-# PCA - Principal Components Analysis
+# Analysis
+## PCA
 ![](qa.png)
 
 Basic sentences are clustered together but more complicated sentences fringe out.
+I found that a large number of the components is required to capture 90% or more of the
+information a given sentence contains. 
 
-See PCA_example.ipynb for more details.
+## Vocab representation
+The Keras tokenizer can provided a wealth of information.
+Ex: This snippet taken from: https://machinelearningmastery.com/prepare-text-data-deep-learning-keras/
+```python3
+# define 5 documents
+docs = ['Well done!',
+		'Good work',
+		'Great effort',
+		'nice work',
+		'Excellent!']
+# create the tokenizer
+t = Tokenizer()
+# fit the tokenizer on the documents
+t.fit_on_texts(docs)
+# summarize what was learned
+print(t.word_counts)
+print(t.document_count)
+print(t.word_index)
+print(t.word_docs)
+# integer encode documents
+encoded_docs = t.texts_to_matrix(docs, mode='count')
+print(encoded_docs)
+```
+```
+OrderedDict([('well', 1), ('done', 1), ('good', 1), ('work', 2), ('great', 1), ('effort', 1), ('nice', 1), ('excellent', 1)])
+5
+{'work': 1, 'effort': 6, 'done': 3, 'great': 5, 'good': 4, 'excellent': 8, 'well': 2, 'nice': 7}
+{'work': 2, 'effort': 1, 'done': 1, 'well': 1, 'good': 1, 'great': 1, 'excellent': 1, 'nice': 1}
+[[ 0.  0.  1.  1.  0.  0.  0.  0.  0.]
+ [ 0.  1.  0.  0.  1.  0.  0.  0.  0.]
+ [ 0.  0.  0.  0.  0.  1.  1.  0.  0.]
+ [ 0.  1.  0.  0.  0.  0.  0.  1.  0.]
+ [ 0.  0.  0.  0.  0.  0.  0.  0.  1.]]
+ ```
