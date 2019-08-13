@@ -27,7 +27,12 @@ settings = loadSettings()
 def validate_texts(texts):
 	'''texts: list of sentences
 	returns a list of valid sentences'''
-	return
+    valid_data = []
+    for i in range(0, len(raw_sequences), 2):
+        if (len(raw_sequences[i]) <= max_word_count and len(raw_sequences[i + 1]) <= max_word_count):
+                valid_data.append(raw_sequences[i])
+                valid_data.append(raw_sequences[i + 1])
+    return valid_data
 
 def load_data_dictionary():
     '''returns a dictionary that contains:
@@ -43,11 +48,7 @@ def load_data_dictionary():
     raw_sequences = [text_to_word_sequence( line ) for line in raw_data]
 
     # remove questions and answers that are above the max size
-    valid_data = []
-    for i in range(0, len(raw_sequences), 2):
-        if (len(raw_sequences[i]) <= max_word_count and len(raw_sequences[i + 1]) <= max_word_count):
-                valid_data.append(raw_sequences[i])
-                valid_data.append(raw_sequences[i + 1])
+    valid_data = validate_texts(raw_sequences)
 
     # creates a map for words to tokens
     # higher frequency words will have a smaller token value
@@ -79,11 +80,7 @@ def load_and_process_data(path_to_data, tokenizer):
     raw_sequences = [text_to_word_sequence( line ) for line in raw_data]
 
     # remove questions and answers that are above the max size
-    valid_data = []
-    for i in range(0, len(raw_sequences), 2):
-        if (len(raw_sequences[i]) <= max_word_count and len(raw_sequences[i + 1]) <= max_word_count):
-                valid_data.append(raw_sequences[i])
-                valid_data.append(raw_sequences[i + 1])
+    valid_data = validate_texts(raw_sequences)
 
     # creates a map for words to tokens
     # higher frequency words will have a smaller token value
