@@ -14,15 +14,7 @@ import toml
 import pickle
 import math
 import random
-
-def loadSettings():
-    '''returns settings dictionary must be in same dir as settings.toml to work'''
-    f = open("settings.toml")
-    settings_content = f.read()
-    f.close()
-    return toml.loads(settings_content)
-
-settings = loadSettings()
+import settings
 
 def validate_texts(texts):
 	'''texts: list of sentences

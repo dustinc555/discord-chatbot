@@ -14,6 +14,7 @@ import sys
 import signal
 
 import util
+import settings
 
 from keras.optimizers import Adam
 
@@ -24,11 +25,13 @@ settings = util.loadSettings()
 # save model and quit
 # this is for when i get tired of waiting
 def signal_handler(sig, frame):
-        print('\nsaving')
-        model.save(settings['model']['production'])
-        util.saveTokenizer(settings['tokenizer']['production'], t)
-        print('quiting\n')
-        sys.exit(0)
+    print('\nsaving')
+    model.save(settings['model']['production'])
+    util.saveTokenizer(settings['tokenizer']['production'], t)
+    print('quiting\n')
+    sys.exit(0)
+
+
 signal.signal(signal.SIGINT, signal_handler)
 
 # make tokenizer
@@ -39,7 +42,8 @@ max_word_count = settings['tokenizer']['max_word_count']
 # loadTrainingData fits the data to the tokenizer and
 # returns the question and answers as numpy array of tokens we well as the
 # number of discovered words (vocab)
-(vocab, input_data, context, next_data_categorical) = util.load_and_process_data(settings['files']['training'], t)
+(vocab, input_data, context, next_data_categorical) = util.load_and_process_data(
+    settings['files']['training'], t)
 
 hidden_size = 800
 batch_size = settings['training']['batch_size']
@@ -57,13 +61,16 @@ print("vocab: " + str(vocab))
 input_layer = Input(shape=(max_word_count,), name='user_input')
 context_layer = Input(shape=(max_word_count,), name='context_input')
 
-shared_embedding = Embedding(output_dim=hidden_size, input_dim=vocab, input_length=max_word_count)
+shared_embedding = Embedding(
+    output_dim=hidden_size, input_dim=vocab, input_length=max_word_count)
 
 embedding_input = shared_embedding(input_layer)
 embedding_context = shared_embedding(context_layer)
 
-LSTM_encoder = LSTM(hidden_size, return_sequences = True, dropout = .5, recurrent_dropout = .5)
-LSTM_decoder = LSTM(hidden_size, return_sequences = True, dropout = .5, recurrent_dropout = .5)
+LSTM_encoder = LSTM(hidden_size, return_sequences=True,
+                    dropout=.5, recurrent_dropout=.5)
+LSTM_decoder = LSTM(hidden_size, return_sequences=True,
+                    dropout=.5, recurrent_dropout=.5)
 
 merge_layer = concatenate([embedding_context, embedding_input])
 encoded_layer = LSTM_encoder(merge_layer)
@@ -71,14 +78,15 @@ decoded_layer = LSTM_decoder(encoded_layer)
 
 out = Dense(vocab, activation='softmax')(decoded_layer)
 
-model = Model(input=[input_layer, context_layer], output = [out])
+model = Model(input=[input_layer, context_layer], output=[out])
 
 # Compile & run training
-model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+model.compile(optimizer='rmsprop',
+              loss='categorical_crossentropy', metrics=['accuracy'])
 
 model.fit([input_data, context], next_data_categorical,
-         batch_size=batch_size,
-         epochs=num_epochs)
+          batch_size=batch_size,
+          epochs=num_epochs)
 
 # model.fit_generator(train_data_generator.generate(),
 #                     len(input_data)//batch_size,
